@@ -93,7 +93,7 @@ function guestStats(guests) {
 // and shown on screen, because PromptWars judges prompt craft, not just output.
 function buildIdeaPrompt(input, plan) {
   return `You are an event planner for a ${input.occasion} in ${input.city || 'India'}.
-Event: ${plan.guests} guests, budget ₹${plan.budget}, vibe: ${input.vibe || 'not specified'}, ${plan.daysUntil} days away.
+Event: ${plan.guests} guests, budget ₹${plan.budgetTotal}, vibe: ${input.vibe || 'not specified'}, ${plan.daysUntil} days away.
 Constraints: ideas must be specific (name the thing, not "make it fun"), fit the budget
 (about ₹${plan.perGuest} per guest), and work for this guest count.
 Give exactly 3 ideas, one line each, no intro, no generic advice.`;
@@ -140,5 +140,5 @@ function generatePlan(input) {
   if (input.vibe) ideas.unshift(`Vibe twist (${input.vibe}): carry this theme through decor, music, and the invitation wording so it feels intentional, not random.`);
   if (input.city) ideas.push(`Local tip for ${input.city}: check 2–3 local vendors in person before booking — photos hide venue size and acoustics.`);
 
-  return { occasion, guests, budget, perGuest, daysUntil: days, budget: budgetOut, timeline, vendors, ideas };
+  return { occasion, guests, budget: budgetOut, budgetTotal: budget, perGuest, daysUntil: days, timeline, vendors, ideas };
 }
