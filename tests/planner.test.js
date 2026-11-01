@@ -1,7 +1,7 @@
 // tests/planner.test.js — run with:  node tests/planner.test.js
 // Uses only Node's built-in assert. No dependencies.
 const assert = require('assert');
-const { generatePlan, datedTimeline, budgetTotals, guestStats, buildIdeaPrompt } = require('../planner.js');
+const { generatePlan, daysUntil, datedTimeline, budgetTotals, guestStats, buildIdeaPrompt } = require('../planner.js');
 
 const future = (days) => {
   const d = new Date(Date.now() + days * 864e5);
@@ -59,3 +59,21 @@ const regInput = { occasion: 'wedding', date: future(45), guests: 200, budget: 5
 assert.ok(!buildIdeaPrompt(regInput, reg).includes('[object Object]'), 'prompt must not contain [object Object]');
 assert.ok(buildIdeaPrompt(regInput, reg).includes('500000'), 'prompt must carry the numeric budget');
 console.log('extra regression checks passed');
+
+// 7. Edge cases (attempt-3 coverage pass)
+assert.strictEqual(daysUntil(future(0)), 0, 'today is 0 days away');
+assert.strictEqual(daysUntil('2000-01-01'), 0, 'past dates clamp to 0, never negative');
+const fallback = generatePlan({ occasion: 'unknown', date: future(10), guests: 10, budget: 10000 });
+assert.strictEqual(fallback.occasion, 'birthday', 'unknown occasion falls back to birthday');
+const clamped = generatePlan({ occasion: 'birthday', date: future(10), guests: 0, budget: 10 });
+assert.strictEqual(clamped.guests, 50, 'a missing/zero guest count falls back to the 50 default');
+assert.strictEqual(clamped.budgetTotal, 1000, 'budget clamps to at least 1000');
+const emptyStats = guestStats([]);
+assert.deepStrictEqual(emptyStats, { total: 0, yes: 0, no: 0, maybe: 0, expected: 0 });
+const over = budgetTotals(plan.budget, { 'Food & Cake': 99999 });
+assert.ok(over.lines.find((l) => l.item === 'Food & Cake').remaining < 0, 'over-spend shows as negative remaining, not hidden');
+const noCity = buildIdeaPrompt({ occasion: 'birthday', vibe: '' }, generatePlan({ occasion: 'birthday', date: future(20), guests: 10, budget: 10000 }));
+assert.ok(noCity.includes('India'), 'prompt falls back to India when no city is given');
+const mid = datedTimeline(generatePlan({ occasion: 'community', date: future(14), guests: 100, budget: 80000 }), future(14));
+assert.strictEqual(mid.length, 4, 'a 14-day runway gives the compressed 4-step dated timeline');
+console.log('edge-case tests passed');
