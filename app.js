@@ -12,7 +12,7 @@ $('date').valueAsDate = new Date(Date.now() + 21 * 864e5);
 function loadSaved() {
   const list = JSON.parse(localStorage.getItem('celebrate-plans') || '[]');
   $('saved-list').innerHTML = list.length ? list.map((p, i) =>
-    `<li><button data-load="${i}">${esc(p.input.occasion)} · ${esc(p.input.date)} · ${p.plan.guests} guests · ${fmt(p.plan.budget)}</button> <button data-del="${i}">✕</button></li>`).join('')
+    `<li><button data-load="${i}">${esc(p.input.occasion)} · ${esc(p.input.date)} · ${p.plan.guests} guests · ${fmt(p.plan.budgetTotal)}</button> <button data-del="${i}">✕</button></li>`).join('')
     : '<li class="hint">No saved plans yet — generate one and hit Save.</li>';
   document.querySelectorAll('[data-load]').forEach(b => b.addEventListener('click', () => {
     const p = JSON.parse(localStorage.getItem('celebrate-plans'))[+b.dataset.load];
@@ -28,7 +28,7 @@ function render(input, plan) {
   current = { input, plan };
   const occLabel = { wedding: 'Wedding', birthday: 'Birthday', community: 'Community event' }[plan.occasion];
   $('plan-title').textContent = `${occLabel} plan — ${plan.daysUntil} days to go`;
-  $('plan-meta').textContent = `${plan.guests} guests · Budget ${fmt(plan.budget)} · ~${fmt(plan.perGuest)} per guest` + (input.city ? ` · ${input.city}` : '');
+  $('plan-meta').textContent = `${plan.guests} guests · Budget ${fmt(plan.budgetTotal)} · ~${fmt(plan.perGuest)} per guest` + (input.city ? ` · ${input.city}` : '');
 
   // Budget tracker
   const totals = budgetTotals(plan.budget, actuals);
