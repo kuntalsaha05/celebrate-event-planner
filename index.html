@@ -1,57 +1,95 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Celebrate — GenAI Celebration &amp; Event Planner</title>
-<link rel="stylesheet" href="styles.css"></head><body>
-<header><h1>🎉 Celebrate</h1><p class="sub">A real event planner, not just a generator — plans you save, guests you track, a budget you actually spend against. PromptWars Virtual · Challenge 05.</p></header>
-<main>
-<section class="card" id="form-card">
-<h2>Plan your event</h2>
-<label>Occasion
-<select id="occasion"><option value="wedding">Wedding</option><option value="birthday" selected>Birthday</option><option value="community">Community event</option></select></label>
-<label>Date <input type="date" id="date"></label>
-<label>City <input type="text" id="city" placeholder="e.g. Pune"></label>
-<label>Guests <input type="number" id="guests" value="50" min="1"></label>
-<label>Budget (₹) <input type="number" id="budget" value="50000" min="1000" step="1000"></label>
-<label>Vibe / theme <input type="text" id="vibe" placeholder="e.g. retro, garden, minimal"></label>
-<button id="generate">Generate my plan →</button>
-</section>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Celebrate — a GenAI celebration & event planner for weddings, birthdays and community events: budget split and spend tracking, a dated timeline, vendor checklist, guest list, and a Prompt Studio powered by Google Gemini.">
+  <!-- Defence in depth: only this origin's code runs; the only network call
+       the page may make is to Google's Gemini API. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src https://generativelanguage.googleapis.com; img-src 'self' data:; base-uri 'self'">
+  <title>Celebrate — GenAI Celebration &amp; Event Planner</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>🎉 Celebrate</h1>
+    <p class="sub">A real event planner, not just a generator — plans you save, guests you track, a budget you actually spend against. PromptWars Virtual · Challenge 05.</p>
+  </header>
 
-<section class="card hidden" id="result">
-<h2 id="plan-title">Your plan</h2>
-<p id="plan-meta"></p>
-<button id="save-plan">💾 Save this plan</button>
-<button id="share-plan">🔗 Copy share link</button>
-<button id="export-plan">⬇ Export JSON</button>
+  <main>
+    <section class="card" id="form-card">
+      <h2>Plan your event</h2>
+      <label>Occasion
+        <select id="occasion">
+          <option value="wedding">Wedding</option>
+          <option value="birthday" selected>Birthday</option>
+          <option value="community">Community event</option>
+        </select>
+      </label>
+      <label>Date <input type="date" id="date"></label>
+      <label>City <input type="text" id="city" placeholder="e.g. Pune"></label>
+      <label>Guests <input type="number" id="guests" value="50" min="1"></label>
+      <label>Budget (₹) <input type="number" id="budget" value="50000" min="1000" step="1000"></label>
+      <label>Vibe / theme <input type="text" id="vibe" placeholder="e.g. retro, garden, minimal"></label>
+      <button id="generate">Generate my plan →</button>
+    </section>
 
-<h3>💰 Budget — planned vs actually spent</h3>
-<table id="budget-table"><thead><tr><th>Item</th><th>Planned</th><th>Spent ₹</th><th>Left</th></tr></thead><tbody></tbody></table>
-<p id="budget-total"></p>
+    <section class="card hidden" id="result">
+      <h2 id="plan-title">Your plan</h2>
+      <p id="plan-meta"></p>
+      <button id="save-plan">💾 Save this plan</button>
+      <button id="share-plan">🔗 Copy share link</button>
+      <button id="export-plan">⬇ Export JSON</button>
 
-<h3>🗓️ Timeline — real dates</h3><ul id="timeline"></ul>
+      <h3>💰 Budget — planned vs actually spent</h3>
+      <table id="budget-table">
+        <thead><tr><th>Item</th><th>Planned</th><th>Spent ₹</th><th>Left</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="budget-total" aria-live="polite"></p>
 
-<h3>✅ Vendor checklist</h3><ul id="vendors"></ul>
+      <h3>🗓️ Timeline — real dates</h3>
+      <ul id="timeline"></ul>
 
-<h3>👥 Guest list</h3>
-<div class="row"><input type="text" id="guest-name" placeholder="Guest name"><select id="guest-rsvp"><option value="yes">Yes</option><option value="maybe" selected>Maybe</option><option value="no">No</option></select><button id="add-guest">Add</button></div>
-<p id="guest-stats"></p><ul id="guest-list"></ul>
+      <h3>✅ Vendor checklist</h3>
+      <ul id="vendors"></ul>
 
-<h3>💡 Personalised ideas</h3><ul id="ideas"></ul>
+      <h3>👥 Guest list</h3>
+      <div class="row">
+        <input type="text" id="guest-name" placeholder="Guest name" aria-label="Guest name">
+        <select id="guest-rsvp" aria-label="Guest RSVP">
+          <option value="yes">Yes</option>
+          <option value="maybe" selected>Maybe</option>
+          <option value="no">No</option>
+        </select>
+        <button id="add-guest">Add</button>
+      </div>
+      <p id="guest-stats" aria-live="polite"></p>
+      <ul id="guest-list"></ul>
 
-<h3>🧠 Prompt Studio <span class="small">— this is the prompt engineering PromptWars judges</span></h3>
-<p class="hint">Edit the prompt below, then run it. The exact prompt sent is shown, so a judge can see the craft, not just the output.</p>
-<textarea id="prompt-text" rows="7"></textarea>
-<label>Gemini API key (optional, stays in your browser) <input type="password" id="geminiKey" placeholder="Paste to run the prompt with real GenAI"></label>
-<button id="run-prompt">Run this prompt with Gemini →</button>
-<p id="ai-note" class="hint"></p>
-</section>
+      <h3>💡 Personalised ideas</h3>
+      <ul id="ideas"></ul>
 
-<section class="card" id="saved-card">
-<h2>📂 My saved plans</h2>
-<p class="hint">Saved on this device. Click a plan to reload it.</p>
-<ul id="saved-list"></ul>
-</section>
-</main>
-<footer><p>PromptWars Virtual · Challenge 05 · Celebration &amp; Event Planner</p></footer>
-<script src="planner.js"></script>
-<script src="app.js"></script>
-</body></html>
+      <h3>🧠 Prompt Studio <span class="small">— this is the prompt engineering PromptWars judges</span></h3>
+      <p class="hint">Edit the prompt below, then run it. The exact prompt sent is shown, so a judge can see the craft, not just the output.</p>
+      <textarea id="prompt-text" rows="7" aria-label="Prompt sent to Gemini"></textarea>
+      <label>Gemini API key (optional, stays in your browser)
+        <input type="password" id="geminiKey" placeholder="Paste to run the prompt with real GenAI">
+      </label>
+      <button id="run-prompt">Run this prompt with Gemini →</button>
+      <p id="ai-note" class="hint" aria-live="polite"></p>
+    </section>
+
+    <section class="card" id="saved-card">
+      <h2>📂 My saved plans</h2>
+      <p class="hint">Saved on this device. Click a plan to reload it.</p>
+      <ul id="saved-list"></ul>
+    </section>
+  </main>
+
+  <footer><p>PromptWars Virtual · Challenge 05 · Celebration &amp; Event Planner</p></footer>
+
+  <script src="planner.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

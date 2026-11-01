@@ -1,9 +1,22 @@
-// planner.js — pure logic for the Celebration & Event Planner.
-// No DOM, no API keys. Tested in Node, reused by app.js in the browser.
-// Input: { occasion: 'wedding'|'birthday'|'community', date: 'YYYY-MM-DD',
-//          guests: number, budget: number (INR), vibe: string, city: string }
-// Output: { budget: [{item, pct, amount}], timeline: [{when, task}],
-//           vendors: [{name, note}], ideas: [string] }
+// planner.js — pure planning logic for Celebrate (Celebration & Event Planner).
+//
+// Design rules:
+//   * No DOM, no network, no API keys — the same file runs in Node (where
+//     tests/planner.test.js exercises it) and in the browser (app.js).
+//   * Every function is deterministic: same input, same plan. The only
+//     non-determinism in the app is the optional Gemini call in app.js.
+//
+// Input shape (a "plan input"):
+//   { occasion: 'wedding' | 'birthday' | 'community',
+//     date: 'YYYY-MM-DD', guests: number, budget: number (INR),
+//     vibe: string, city: string }
+//
+// Output shape (a "plan"):
+//   { occasion, guests, budgetTotal, perGuest, daysUntil,
+//     budget: [{ item, pct, amount }], timeline: [{ when, task }],
+//     vendors: [{ name, note, done }], ideas: [string] }
+
+const MS_PER_DAY = 86400000;
 
 const BUDGET_SPLIT = {
   wedding:   [['Venue', 32], ['Catering', 28], ['Decor & Flowers', 14], ['Photography', 10], ['Music & Entertainment', 6], ['Attire & Grooming', 5], ['Contingency', 5]],
@@ -35,14 +48,19 @@ const IDEAS = {
   ],
 };
 
+/** Whole days from `today` until `dateStr` ('YYYY-MM-DD'); never negative. */
 function daysUntil(dateStr, today = new Date()) {
   const d = new Date(dateStr + 'T00:00:00');
   const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  return Math.max(0, Math.round((d - t) / 86400000));
+  return Math.max(0, Math.round((d - t) / MS_PER_DAY));
 }
 
-// v2: turn the relative timeline into real calendar dates, so the plan
-// is something you can actually follow, not just read once.
+/**
+ * Turn a plan's relative timeline into real calendar dates counting back
+ * from the event date, so the plan is something you can actually follow.
+ * The runway length picks the schedule: 30+ days (full), 7–29 (compressed),
+ * under 7 (essentials only). The last entry is always the event date itself.
+ */
 function datedTimeline(plan, eventDateStr) {
   const ev = new Date(eventDateStr + 'T00:00:00');
   const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; // local date, not UTC (toISOString shifts a day in IST)
@@ -70,7 +88,11 @@ function datedTimeline(plan, eventDateStr) {
   return out;
 }
 
-// v2: planned vs actual budget. actuals: { itemName: amountSpent }
+/**
+ * Planned vs actual spend. `actuals` maps a budget item name to the amount
+ * actually spent. Returns per-line { spent, remaining } plus grand totals;
+ * `remaining` is negative when a line is over budget — shown, not hidden.
+ */
 function budgetTotals(budgetLines, actuals) {
   let planned = 0, actual = 0;
   const lines = budgetLines.map((b) => {
@@ -81,7 +103,10 @@ function budgetTotals(budgetLines, actuals) {
   return { lines, planned, actual, remaining: planned - actual };
 }
 
-// v2: guest list stats. guests: [{ name, rsvp: 'yes'|'no'|'maybe' }]
+/**
+ * RSVP summary for a guest list [{ name, rsvp: 'yes' | 'no' | 'maybe' }].
+ * `expected` (yes + maybe) is the headcount to plan catering against.
+ */
 function guestStats(guests) {
   const yes = guests.filter(g => g.rsvp === 'yes').length;
   const no = guests.filter(g => g.rsvp === 'no').length;
@@ -89,8 +114,13 @@ function guestStats(guests) {
   return { total: guests.length, yes, no, maybe, expected: yes + maybe };
 }
 
-// v2: the prompt the app actually sends to Gemini — editable in Prompt Studio,
-// and shown on screen, because PromptWars judges prompt craft, not just output.
+/**
+ * The exact prompt the app sends to Gemini — shown and editable in the
+ * Prompt Studio, because PromptWars judges prompt craft, not just output.
+ * It carries the persona (occasion + city), the hard numbers (guests,
+ * budget, per-guest spend, days left) and the output contract (exactly 3
+ * ideas, one line each, no generic advice).
+ */
 function buildIdeaPrompt(input, plan) {
   return `You are an event planner for a ${input.occasion} in ${input.city || 'India'}.
 Event: ${plan.guests} guests, budget ₹${plan.budgetTotal}, vibe: ${input.vibe || 'not specified'}, ${plan.daysUntil} days away.
@@ -101,6 +131,13 @@ Give exactly 3 ideas, one line each, no intro, no generic advice.`;
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { generatePlan, daysUntil, datedTimeline, budgetTotals, guestStats, buildIdeaPrompt };
 
+/**
+ * Build a complete plan from a plan input. Defensive by design: an unknown
+ * occasion falls back to 'birthday', a missing guest count defaults to 50, and the
+ * budget to >= ₹1,000, so the UI can never produce a broken plan. The
+ * budget split uses Math.round per line against fixed percentages — see
+ * tests for the exact-sum property on the three stock budgets.
+ */
 function generatePlan(input) {
   const occasion = BUDGET_SPLIT[input.occasion] ? input.occasion : 'birthday';
   const guests = Math.max(1, Math.round(input.guests || 50));

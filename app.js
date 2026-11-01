@@ -86,7 +86,7 @@ function renderSavedPlans() {
   const list = readSavedPlans();
   $('saved-list').innerHTML = list.length
     ? list.map((p, i) =>
-        `<li><button data-load="${i}">${esc(p.input.occasion)} · ${esc(p.input.date)} · ${p.plan.guests} guests · ${fmt(p.plan.budgetTotal)}</button> <button data-del="${i}">✕</button></li>`).join('')
+        `<li><button data-load="${i}">${esc(p.input.occasion)} · ${esc(p.input.date)} · ${p.plan.guests} guests · ${fmt(p.plan.budgetTotal)}</button> <button data-del="${i}" aria-label="Delete this saved plan">✕</button></li>`).join('')
     : '<li class="hint">No saved plans yet — generate one and hit Save.</li>';
 
   document.querySelectorAll('[data-load]').forEach((b) =>
@@ -143,7 +143,7 @@ function renderGuests() {
   $('guest-stats').textContent =
     `Listed: ${s.total} · Yes: ${s.yes} · Maybe: ${s.maybe} · No: ${s.no} · Expected: ${s.expected}`;
   $('guest-list').innerHTML = state.guests
-    .map((g, i) => `<li>${esc(g.name)} — ${esc(g.rsvp)} <button data-rm="${i}">✕</button></li>`).join('');
+    .map((g, i) => `<li>${esc(g.name)} — ${esc(g.rsvp)} <button data-rm="${i}" aria-label="Remove this guest">✕</button></li>`).join('');
   document.querySelectorAll('[data-rm]').forEach((b) =>
     b.addEventListener('click', () => {
       state.guests.splice(+b.dataset.rm, 1);
