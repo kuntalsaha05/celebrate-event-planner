@@ -6,7 +6,7 @@ events. It does not just generate a plan once — you save plans, track guests,
 and spend against the budget, so it stays useful from the first idea to the
 event day.
 
-**Live app:** _(GitHub Pages URL — add after enabling Pages: Settings → Pages → Deploy from branch → `main`)_
+**Live app:** https://kuntalsaha05.github.io/celebrate-event-planner/
 **Repository rules check:** public · single branch (`main`) · total size ≈ 30 KB (limit 10 MB)
 
 ---
