@@ -50,3 +50,12 @@ const prompt = buildIdeaPrompt(
 assert.ok(prompt.includes('Pune') && prompt.includes('200 guests'), 'prompt must include city and guest count');
 
 console.log('All planner tests passed.');
+
+// Regression: plan.budget is the line-items array; the numeric total lives in budgetTotal.
+const reg = generatePlan({ occasion: 'wedding', date: future(45), guests: 200, budget: 500000, city: 'Pune', vibe: 'garden' });
+assert.strictEqual(reg.budgetTotal, 500000);
+assert.ok(Array.isArray(reg.budget));
+const regInput = { occasion: 'wedding', date: future(45), guests: 200, budget: 500000, city: 'Pune', vibe: 'garden' };
+assert.ok(!buildIdeaPrompt(regInput, reg).includes('[object Object]'), 'prompt must not contain [object Object]');
+assert.ok(buildIdeaPrompt(regInput, reg).includes('500000'), 'prompt must carry the numeric budget');
+console.log('extra regression checks passed');
